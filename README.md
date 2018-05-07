@@ -25,7 +25,12 @@ Copy example file:
 cp example.json my-email-hook.json
 ```
 
-Edit hook to configure:
+Edit hook file to configure:
  - sender/recipient addresses
  - subject template
  - content template
+
+Create hook on LoudML instance:
+ ```
+curl -X PUT -H 'Content-Type: application/json' localhost:8077/models/hooks -d @my-email-hook.json
+```
