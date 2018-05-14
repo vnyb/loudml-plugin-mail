@@ -1,6 +1,7 @@
 ---
 smtp:
-  host: smtp.gmail.com
+  host: smtp.server.tld
+  port: 587
   user: user
   password: password
   tls: true
