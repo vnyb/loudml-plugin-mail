@@ -57,15 +57,18 @@ class MailHook(Hook):
     Send e-mail notifications on anomaly detection
     """
 
-    DEFAULT_SUBJECT = "[LoudML] anomaly detected! (model={model}, score={score})"
+    DEFAULT_SUBJECT = """
+[LoudML] anomaly detected! (model={model}, score={score})"
+"""
     DEFAULT_CONTENT = """
-    Anomaly detected by LoudML!
+Anomaly detected by LoudML!
 
-    model={model}
-    score={score}
-    predicted={predicted}
-    observed={observed}
-    """
+date={date}
+model={model}
+score={score}
+predicted={predicted}
+observed={observed}
+"""
 
     CONFIG_SCHEMA = Schema({
         Required('from'): Schema({
@@ -110,8 +113,8 @@ class MailHook(Hook):
             addr[0],
             addr[1],
         )
-        msg['Subject'] = self.config['subject'].format(**fmt_args)
-        msg.set_content(self.config['content'].format(**fmt_args))
+        msg['Subject'] = self.config['subject'].strip().format(**fmt_args)
+        msg.set_content(self.config['content'].strip().format(**fmt_args))
 
         if smtp_cfg['tls']:
             smtp_cls = smtplib.SMTP_SSL
