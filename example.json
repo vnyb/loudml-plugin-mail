@@ -11,6 +11,6 @@
             "address": "bar@domain.tld"
         },
         "subject": "[LoudML] anomaly detected! (model={model}, score={score})",
-        "content": "Anomaly detected by LoudML!\nmodel={model}\nscore={score}\npredicted={predicted}\nobserved={observed}"
+        "content": "Anomaly detected by LoudML!\nmodel={model}\ndate={date}\nscore={score}\npredicted={predicted}\nobserved={observed}"
     }
 }
