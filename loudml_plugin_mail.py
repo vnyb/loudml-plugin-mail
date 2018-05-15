@@ -83,7 +83,16 @@ observed={observed}
         Optional('content', default=DEFAULT_CONTENT): str,
     })
 
-    def on_anomaly(self, model, timestamp, score, predicted, observed, *args, **kwargs):
+    def on_anomaly(
+        self,
+        model,
+        dt,
+        score,
+        predicted,
+        observed,
+        *args,
+        **kwargs
+    ):
         plugin_cfg = MailPlugin.instance.config
 
         if plugin_cfg is None:
@@ -95,7 +104,7 @@ observed={observed}
 
         fmt_args = {
             'model': model,
-            'timestamp': timestamp,
+            'date': str(dt.astimezone()),
             'score': score,
             'predicted': json.dumps(predicted),
             'observed': json.dumps(observed),
@@ -131,6 +140,8 @@ observed={observed}
             if user:
                 password = smtp_cfg.get('password')
                 client.login(user, password)
+
+            logging.info("sending alert to %s", self.config['to']['address'])
 
             client.send_message(msg)
         except smtplib.SMTPException as exn:
