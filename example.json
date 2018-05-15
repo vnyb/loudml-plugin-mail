@@ -1,6 +1,6 @@
 {
     "type": "mail",
-    "name": "my-hook",
+    "name": "mail-example",
     "config": {
         "from": {
             "name": "Foo",
