@@ -3,14 +3,22 @@
     "name": "mail-example",
     "config": {
         "from": {
-            "name": "Foo",
-            "address": "foo@domain.tld"
+            "name": "LoudML",
+            "address": "loudml@domain.tld"
         },
         "to": {
-            "name": "Bar",
-            "address": "bar@domain.tld"
+            "name": "Admin",
+            "address": "admin@domain.tld"
         },
-        "subject": "[LoudML] anomaly detected! (model={model}, score={score})",
-        "content": "Anomaly detected by LoudML!\nmodel={model}\ndate={date}\nscore={score}\npredicted={predicted}\nobserved={observed}"
+        "templates": {
+            "anomaly_start": {
+                "subject": "[LoudML] anomaly detected! (model={model}, score={score})",
+                "content": "Anomaly detected by LoudML!\n\nmodel={model}\ndate={date}\nscore={score}\npredicted={predicted}\nobserved={observed}\n\nReason:\n\n{reason}"
+            },
+            "anomaly_end": {
+                "subject": "[LoudML] anomaly ended (model={model}, score={score})",
+                "content": "Anomaly ended\nmodel={model}\ndate={date}\nscore={score}"
+            }
+        }
     }
 }

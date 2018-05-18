@@ -57,10 +57,14 @@ class MailHook(Hook):
     Send e-mail notifications on anomaly detection
     """
 
-    DEFAULT_SUBJECT = """
-[LoudML] anomaly detected! (model={model}, score={score})"
+    TEMPLATES = {
+        'anomaly_start': {
+            'subject': \
 """
-    DEFAULT_CONTENT = """
+[LoudML] anomaly detected! (model={model}, score={score})"
+""",
+            'content': \
+"""
 Anomaly detected by LoudML!
 
 date={date}
@@ -69,6 +73,22 @@ score={score}
 predicted={predicted}
 observed={observed}
 """
+        },
+        'anomaly_end': {
+            'subject': \
+"""
+[LoudML] anomaly end (model={model}, score={score})"
+""",
+            'content':
+"""
+Anomaly end
+
+date={date}
+model={model}
+score={score}
+""",
+        },
+    }
 
     CONFIG_SCHEMA = Schema({
         Required('from'): Schema({
@@ -79,36 +99,33 @@ observed={observed}
             Optional('name', default=""): str,
             Required('address'): Email(),
         }),
-        Optional('subject', default=DEFAULT_SUBJECT): str,
-        Optional('content', default=DEFAULT_CONTENT): str,
+        Optional('templates', default=TEMPLATES): Schema({
+            Optional('anomaly_start', default=TEMPLATES['anomaly_start']): {
+                Optional('subject', default=TEMPLATES['anomaly_start']['subject']): str,
+                Optional('content', default=TEMPLATES['anomaly_start']['content']): str,
+            },
+            Optional('anomaly_end', default=TEMPLATES['anomaly_end']): {
+                Optional('subject', default=TEMPLATES['anomaly_end']['subject']): str,
+                Optional('content', default=TEMPLATES['anomaly_end']['content']): str,
+            },
+        }),
     })
 
-    def on_anomaly(
-        self,
-        model,
-        dt,
-        score,
-        predicted,
-        observed,
-        *args,
-        **kwargs
-    ):
+    def send_mail(self, template_name, *args, **kwargs):
+        """
+        Build e-mail from template and send it
+        """
+
         plugin_cfg = MailPlugin.instance.config
 
         if plugin_cfg is None:
             logging.error("mail plug-in is not configured")
             return
+
         smtp_cfg = plugin_cfg['smtp']
+        template = self.config['templates'][template_name]
 
         msg = EmailMessage()
-
-        fmt_args = {
-            'model': model,
-            'date': str(dt.astimezone()),
-            'score': score,
-            'predicted': json.dumps(predicted),
-            'observed': json.dumps(observed),
-        }
 
         addr = self.config['from']['address'].split('@')
         msg['From'] = Address(
@@ -122,8 +139,8 @@ observed={observed}
             addr[0],
             addr[1],
         )
-        msg['Subject'] = self.config['subject'].strip().format(**fmt_args)
-        msg.set_content(self.config['content'].strip().format(**fmt_args))
+        msg['Subject'] = template['subject'].strip().format(**kwargs)
+        msg.set_content(template['content'].strip().format(**kwargs))
 
         if smtp_cfg['tls']:
             smtp_cls = smtplib.SMTP_SSL
@@ -147,3 +164,50 @@ observed={observed}
         except smtplib.SMTPException as exn:
             logging.error("cannot execute %s.%s hook: %s",
                           model, self.name, str(exn))
+
+    def on_anomaly_start(
+        self,
+        model,
+        dt,
+        score,
+        predicted,
+        observed,
+        anomalies,
+        *args,
+        **kwargs
+    ):
+        ano_desc = [
+            "feature '{}' is too {} (score = {:.1f})".format(
+                 feature,
+                 ano['type'],
+                 ano['score']
+            )
+            for feature, ano in anomalies.items()
+        ]
+
+        self.send_mail(
+            'anomaly_start',
+            model=model,
+            date=str(dt.astimezone()),
+            score=score,
+            predicted=json.dumps(predicted),
+            observed=json.dumps(observed),
+            reason="\n".join(ano_desc),
+            **kwargs
+        )
+
+    def on_anomaly_end(
+        self,
+        model,
+        dt,
+        score,
+        *args,
+        **kwargs
+    ):
+        self.send_mail(
+            'anomaly_end',
+            model=model,
+            date=str(dt.astimezone()),
+            score=score,
+            **kwargs
+        )
