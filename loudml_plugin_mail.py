@@ -16,6 +16,7 @@
 import logging
 import json
 import smtplib
+import ssl
 
 from email.message import EmailMessage
 from email.headerregistry import Address
@@ -161,9 +162,12 @@ score={score}
             logging.info("sending alert to %s", self.config['to']['address'])
 
             client.send_message(msg)
-        except smtplib.SMTPException as exn:
+        except (
+            smtplib.SMTPException,
+            ssl.SSLError,
+        ) as exn:
             logging.error("cannot execute %s.%s hook: %s",
-                          model, self.name, str(exn))
+                          kwargs['model'], self.name, str(exn))
 
     def on_anomaly_start(
         self,
